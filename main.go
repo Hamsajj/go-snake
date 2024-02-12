@@ -11,17 +11,11 @@ import (
 	"github.com/go-gl/glfw/v3.2/glfw"
 )
 
+type Vertex2D [2]float32
+
 const (
 	width  = 500
 	height = 500
-)
-
-var (
-	triangle = []float32{
-		0, 0.5, 0, // top
-		-0.5, -0.5, 0, // left
-		0.5, -0.5, 0, // right
-	}
 )
 
 func main() {
@@ -34,18 +28,20 @@ func main() {
 	if err != nil {
 		log.Fatalln("failed to initialize OpenGL:", err)
 	}
-	vao := makeVao(triangle)
+
+	square := createSquare(Vertex2D{-0.5, 0.5}, Vertex2D{-0.5, -0.5}, Vertex2D{0.5, -0.5}, Vertex2D{0.5, 0.5})
+	vao := makeVao(square)
 	for !window.ShouldClose() {
-		draw(vao, window, program)
+		draw(vao, len(square)/3, window, program)
 	}
 }
 
-func draw(vao uint32, window *glfw.Window, program uint32) {
+func draw(vao uint32, arraySize int, window *glfw.Window, program uint32) {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	gl.UseProgram(program)
 
 	gl.BindVertexArray(vao)
-	gl.DrawArrays(gl.TRIANGLES, 0, int32(len(triangle)/3))
+	gl.DrawArrays(gl.TRIANGLES, 0, int32(arraySize))
 
 	glfw.PollEvents()
 	window.SwapBuffers()
