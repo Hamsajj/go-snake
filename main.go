@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-gl/gl/v4.1-core/gl"
 	"log"
 	"os"
 	"runtime"
 	"strings"
+
+	"github.com/go-gl/gl/v4.1-core/gl"
 
 	"github.com/go-gl/glfw/v3.2/glfw"
 )
