@@ -22,19 +22,52 @@ const (
 func main() {
 	runtime.LockOSThread()
 
-	window := initGlfw()
-	defer glfw.Terminate()
+	window, terminate := initGlfw()
+	defer terminate()
 
 	program, err := initOpenGL()
 	if err != nil {
 		log.Fatalln("failed to initialize OpenGL:", err)
 	}
 
-	square := createSquare(Vertex2D{-0.5, 0.5}, Vertex2D{-0.5, -0.5}, Vertex2D{0.5, -0.5}, Vertex2D{0.5, 0.5})
-	vao := makeVao(square)
+	framesNumber := 100
+	squares := createSetOfSquaresVAO(framesNumber)
+
+	drawn := 0
+	objectSize := 6 // 2 triangles (len of square / 3)
+	frameCounter := 0
 	for !window.ShouldClose() {
-		draw(vao, len(square)/3, window, program)
+		n := frameCounter / (framesNumber - 1)
+		if n%2 == 0 {
+			drawn++
+		} else {
+			drawn--
+		}
+		vaoToDraw := squares[drawn]
+		draw(vaoToDraw, objectSize, window, program)
+
+		frameCounter++
 	}
+}
+
+func createSetOfSquaresVAO(number int) []uint32 {
+	squares := make([]uint32, 0, number)
+	maxRadius := 0.5
+	minRadius := 0.0
+	stepSize := float32(maxRadius-minRadius) / float32(number)
+	for i := 0; i < number; i++ {
+		point := 0.0 + stepSize*float32(i)
+		square := createSquare(
+			Vertex2D{-0.5, 0.5},
+			Vertex2D{-0.5, -0.5},
+			Vertex2D{0.5, -0.5},
+			Vertex2D{point, point},
+		)
+		vao := makeVao(square)
+		squares = append(squares, vao)
+	}
+
+	return squares
 }
 
 func draw(vao uint32, arraySize int, window *glfw.Window, program uint32) {
@@ -49,7 +82,7 @@ func draw(vao uint32, arraySize int, window *glfw.Window, program uint32) {
 }
 
 // initGlfw initializes glfw and returns a Window to use.
-func initGlfw() *glfw.Window {
+func initGlfw() (*glfw.Window, func()) {
 	if err := glfw.Init(); err != nil {
 		panic(err)
 	}
@@ -66,10 +99,12 @@ func initGlfw() *glfw.Window {
 	}
 	window.MakeContextCurrent()
 
-	return window
+	return window, func() {
+		glfw.Terminate()
+	}
 }
 
-// initOpenGL initializes OpenGL and returns an intiialized program.
+// initOpenGL initializes OpenGL and returns a program.
 func initOpenGL() (uint32, error) {
 	if err := gl.Init(); err != nil {
 		return 0, err
@@ -112,7 +147,6 @@ func makeVao(points []float32) uint32 {
 	gl.GenVertexArrays(1, &vao)
 	gl.BindVertexArray(vao)
 	gl.EnableVertexAttribArray(0)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 0, nil)
 
 	return vao
